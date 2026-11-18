@@ -11,6 +11,8 @@ import type { Session } from "@/types/session";
 export interface AuthenticationService {
   signIn(input: SignInInput): Promise<Session>;
 
+  signOut(): Promise<void>;
+
   changePassword(
     input: ChangePasswordInput,
     token: string,

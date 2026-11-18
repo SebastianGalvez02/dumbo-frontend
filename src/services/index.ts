@@ -1,3 +1,5 @@
+import { mockServices } from "@/mocks/mock-services";
+
 import type { AuthenticationService } from "./contracts/authentication-service";
 import type { CustomerService } from "./contracts/customer-service";
 import type { EmployeeService } from "./contracts/employee-service";
@@ -14,3 +16,5 @@ export interface Services {
   employees: EmployeeService;
   products: ProductService;
 }
+
+export const services: Services = mockServices;
