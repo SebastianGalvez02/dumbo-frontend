@@ -13,7 +13,7 @@ export interface RequestPasswordResetResponse {
     message: string;
 }
 export interface ResetPasswordInput {
-    email: string;
+    mail: string;
     token: string;
     newPassword: string;
 }
