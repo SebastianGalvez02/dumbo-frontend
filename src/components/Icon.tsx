@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
 export type IconName =
-  | "arrow" | "box" | "cart" | "chart" | "chevron" | "grid"
-  | "lock" | "logout" | "mail" | "shield" | "users";
+  | "arrow" | "box" | "cart" | "chart" | "chevron" | "close" | "edit" | "grid"
+  | "lock" | "logout" | "mail" | "plus" | "search" | "shield" | "users";
 
 const paths: Record<IconName, ReactNode> = {
   arrow: <path d="m9 18 6-6-6-6M4 12h11" />,
@@ -59,6 +59,20 @@ const paths: Record<IconName, ReactNode> = {
       <path d="M3 20v-2a6 6 0 0 1 12 0v2M16 4a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 5v1" />
     </>
   ),
+  close: <path d="m6 6 12 12M18 6 6 18" />,
+  edit: (
+    <>
+      <path d="m14 5 5 5L9 20H4v-5L14 5Z" />
+      <path d="m12 7 5 5" />
+    </>
+  ),
+  plus: <path d="M12 5v14M5 12h14" />,
+  search: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m16 16 5 5" />
+    </>
+  )
 };
 
 export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {

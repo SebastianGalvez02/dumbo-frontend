@@ -23,7 +23,7 @@ function extraerMensaje(datos: unknown): string {
 }
 
 async function solicitar<T>(
-  metodo: "GET" | "POST",
+  metodo: "GET" | "POST" | "PUT" | "PATCH",
   ruta: string,
   body?: unknown,
   token?: string,
@@ -42,6 +42,12 @@ async function solicitar<T>(
   const datos = await respuesta.json().catch(() => null);
 
   if (!respuesta.ok) {
+    if (respuesta.status === 401 && !datos) {
+      throw new ApiError(401, "Tu sesión expiró. Inicia sesión nuevamente.");
+    }
+    if (respuesta.status === 403) {
+      throw new ApiError(403, "No tienes permisos para realizar esta acción.");
+    }
     throw new ApiError(respuesta.status, extraerMensaje(datos));
   }
   return datos as T;
@@ -51,6 +57,10 @@ export const apiGet = <T>(ruta: string) => solicitar<T>("GET", ruta);
 
 export const apiPost = <T>(ruta: string, body: unknown, token?: string) =>
   solicitar<T>("POST", ruta, body, token);
+
+export const apiPut = <T>(ruta: string, body: unknown) => solicitar<T>("PUT", ruta, body);
+
+export const apiPatch = <T>(ruta: string, body: unknown) => solicitar<T>("PATCH", ruta, body);
 
 export function mensajeDeError(error: unknown): string {
   if (error instanceof ApiError) return error.message;
