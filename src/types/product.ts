@@ -20,3 +20,15 @@ export interface CreateProductInput {
     image?: File;
     brand: string;
 }
+export interface ImportProductInput {
+    file: File;
+}
+export interface ProductImportError {
+    rowNumber: number;
+    code?: string;
+    messages: string[];
+}
+export interface ImportProductsResult {
+    createdProducts: Product[];
+    rejectedRows: ProductImportError[];
+}
