@@ -2,7 +2,7 @@ export interface SignInInput {
     mail: string;
     password: string;
 }
-export interface changePasswordInput {
+export interface ChangePasswordInput {
     oldPassword: string;
     newPassword: string;
 }

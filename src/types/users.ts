@@ -15,7 +15,7 @@ export interface Employee extends UserContact {
     isEnabled: boolean;
 }
 export type RegisterCustomerInput = UserContact;
-export type UpdateCostumerInput = Partial<UserContact>;
+export type UpdateCustomerInput = Partial<UserContact>;
 export type CreateEmployeeInput = UserContact;
 export type UpdateEmployeeInput = Partial<UserContact>;
 
