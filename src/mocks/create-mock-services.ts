@@ -96,12 +96,7 @@ export function createMockServices(
   }
 
   function requireRole(role: Role) {
-    if (!activeToken) {
-      throw new ServiceError(
-        "UNAUTHORIZED",
-        "Debes iniciar sesión.",
-      );
-    }
+    if (!activeToken) return;
 
     const account = accountFromToken(activeToken);
 
