@@ -70,7 +70,19 @@ npm ci
 
 Este comando utiliza `package-lock.json` para reproducir las versiones del proyecto. Si existe una instalación anterior de `node_modules`, la reemplaza.
 
-### 3. Iniciar el entorno de desarrollo
+### 3. Configurar el entorno local
+
+```powershell
+Copy-Item .env.example .env
+```
+
+- `NEXT_PUBLIC_DATA_SOURCE=mock` utiliza los datos y servicios simulados. Es el modo predeterminado.
+- `NEXT_PUBLIC_DATA_SOURCE=api` queda reservado para la conexión con el backend. Hasta que exista el adaptador, la aplicación informa que el modo no está disponible.
+- `NEXT_PUBLIC_API_URL` es la URL del backend. El perfil HTTP local de Dumbo utiliza `http://localhost:5033`.
+
+Reinicia el servidor de desarrollo después de cambiar estas variables. Para producción, configúralas antes de ejecutar `npm run build`.
+
+### 4. Iniciar el entorno de desarrollo
 
 ```powershell
 npm run dev

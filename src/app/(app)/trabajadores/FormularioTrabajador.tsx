@@ -3,39 +3,38 @@
 import { useState, type FormEvent } from "react";
 import { Icon } from "@/components/Icon";
 import { Alerta } from "@/components/formulario";
-import type { DatosTrabajador } from "@/lib/trabajadores";
+import type { UserContact } from "@/types/users";
 import { esTelefonoValido, formatearTelefono, MENSAJE_TELEFONO } from "@/lib/validaciones";
 
-interface FormularioTrabajadorProps {
-  esEdicion: boolean;
-  inicial?: DatosTrabajador;
+interface EmployeeFormProps {
+  isEditing: boolean;
+  initialValues?: UserContact;
   error?: string;
-  onCancelar: () => void;
-  onEnviar: (datos: DatosTrabajador) => void;
+  onCancel: () => void;
+  onSubmit: (values: UserContact) => void;
 }
 
-export function FormularioTrabajador({ esEdicion, inicial, error, onCancelar, onEnviar }: FormularioTrabajadorProps) {
-  // Errores detectados aquí, antes de enviar (el `error` de props viene del backend).
-  const [errorLocal, setErrorLocal] = useState("");
-  const mensajeError = errorLocal || error;
+export function EmployeeForm({ isEditing, initialValues, error, onCancel, onSubmit }: EmployeeFormProps) {
+  const [localError, setLocalError] = useState("");
+  const errorMessage = localError || error;
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const leer = (campo: string) => String(form.get(campo) ?? "").trim();
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const readField = (field: string) => String(form.get(field) ?? "").trim();
 
-    const telefono = leer("telefono");
-    if (!esTelefonoValido(telefono)) {
-      setErrorLocal(MENSAJE_TELEFONO);
+    const phone = readField("phone");
+    if (!esTelefonoValido(phone)) {
+      setLocalError(MENSAJE_TELEFONO);
       return;
     }
 
-    setErrorLocal("");
-    onEnviar({
-      nombres: leer("nombres"),
-      apellidos: leer("apellidos"),
-      telefono: formatearTelefono(telefono),
-      correo: leer("correo"),
+    setLocalError("");
+    onSubmit({
+      name: readField("name"),
+      lastName: readField("lastName"),
+      phone: formatearTelefono(phone),
+      mail: readField("mail"),
     });
   }
 
@@ -44,10 +43,10 @@ export function FormularioTrabajador({ esEdicion, inicial, error, onCancelar, on
       <form className="person-modal" onSubmit={handleSubmit}>
         <div className="modal-title">
           <div>
-            <p className="eyebrow">{esEdicion ? "Editar datos" : "Nueva cuenta"}</p>
-            <h2 id="titulo-formulario">{esEdicion ? "Editar trabajador" : "Registrar trabajador"}</h2>
+            <p className="eyebrow">{isEditing ? "Editar datos" : "Nueva cuenta"}</p>
+            <h2 id="titulo-formulario">{isEditing ? "Editar trabajador" : "Registrar trabajador"}</h2>
           </div>
-          <button type="button" className="icon-btn" onClick={onCancelar} aria-label="Cerrar">
+          <button type="button" className="icon-btn" onClick={onCancel} aria-label="Cerrar">
             <Icon name="close" />
           </button>
         </div>
@@ -55,44 +54,44 @@ export function FormularioTrabajador({ esEdicion, inicial, error, onCancelar, on
         <div className="form-grid">
           <label>
             Nombres
-            <input name="nombres" defaultValue={inicial?.nombres} required />
+            <input name="name" defaultValue={initialValues?.name} required />
           </label>
           <label>
             Apellidos
-            <input name="apellidos" defaultValue={inicial?.apellidos} required />
+            <input name="lastName" defaultValue={initialValues?.lastName} required />
           </label>
           <label>
             Teléfono
             <input
-              name="telefono"
+              name="phone"
               type="tel"
               inputMode="tel"
               placeholder="+56 9 1234 5678"
-              defaultValue={inicial?.telefono}
+              defaultValue={initialValues?.phone}
               required
             />
           </label>
           <label>
             Correo electrónico
-            <input name="correo" type="email" placeholder="nombre@correo.cl" defaultValue={inicial?.correo} required />
+            <input name="mail" type="email" placeholder="nombre@correo.cl" defaultValue={initialValues?.mail} required />
           </label>
         </div>
 
         <div className="protected-field">
           <Icon name="lock" size={17} />
-          {esEdicion
+          {isEditing
             ? "La contraseña no puede editarse desde esta sección."
-            : "La contraseña inicial será el primer nombre y el primer apellido, sin tildes ni espacios (por ejemplo, JuanPerez). Deberá cambiarse en el primer acceso."}
+            : "La contraseña inicial une todos los nombres y apellidos, en minúsculas y sin tildes ni espacios (por ejemplo, Juan Pérez → juanperez). Deberá cambiarse en el primer acceso."}
         </div>
 
-        {mensajeError && <Alerta tipo="error">{mensajeError}</Alerta>}
+        {errorMessage && <Alerta tipo="error">{errorMessage}</Alerta>}
 
         <div className="modal-actions">
-          <button type="button" className="btn btn-secondary" onClick={onCancelar}>
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>
             Cancelar
           </button>
           <button type="submit" className="btn btn-primary">
-            {esEdicion ? "Guardar cambios" : "Registrar trabajador"}
+            {isEditing ? "Guardar cambios" : "Registrar trabajador"}
           </button>
         </div>
       </form>
