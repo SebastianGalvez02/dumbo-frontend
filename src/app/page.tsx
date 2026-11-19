@@ -10,7 +10,7 @@ export default function Home() {
   const sesion = useSesion();
 
   useEffect(() => {
-    if (sesion === null) router.replace("/login");
+    if (sesion === null) router.replace("/catalogo");
     else if (sesion) router.replace(rutaInicio(sesion.rol));
   }, [sesion, router]);
 

@@ -647,6 +647,13 @@ export function createMockServices(
     },
 
     products: {
+      async list() {
+        beforeOperation();
+
+        // Catálogo público: no exige sesión.
+        return products.map((product) => ({ ...product }));
+      },
+
       async create(input) {
         beforeOperation();
         requireRole("Trabajador");

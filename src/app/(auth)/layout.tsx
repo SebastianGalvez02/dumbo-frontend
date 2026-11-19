@@ -1,13 +1,16 @@
 import type { ReactNode } from "react";
 import { Logo } from "@/components/Logo";
 import "./auth.css";
+import Link from "next/link";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <main className="auth-layout">
       <section className="auth-brand">
         <div className="auth-brand-inner">
-          <Logo light />
+          <Link href="/" className="logo-link" aria-label="Ir al catálogo">
+            <Logo light />
+          </Link>
           <div className="auth-statement">
             <p className="eyebrow light">Compra simple. Gestión inteligente.</p>
             <h1>Todo lo que necesitas, más cerca.</h1>
@@ -24,7 +27,9 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
       <section className="auth-panel">
         <div className="mobile-logo">
-          <Logo />
+          <Link href="/" className="logo-link" aria-label="Ir al catálogo">
+            <Logo />
+          </Link>
         </div>
         <div className="auth-card">{children}</div>
       </section>

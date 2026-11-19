@@ -6,6 +6,7 @@ import type {
 } from "@/types/product";
 
 export interface ProductService {
+  list(): Promise<Product[]>;
   create(input: CreateProductInput): Promise<Product>;
 
   importProducts(

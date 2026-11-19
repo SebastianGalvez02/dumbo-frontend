@@ -78,6 +78,18 @@ button:disabled {
   color: white;
 }
 
+.logo-link {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 12px;
+}
+
+.logo-link:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 4px;
+}
+
+
 /* ---------- Textos ---------- */
 .eyebrow {
   margin: 0 0 10px;
