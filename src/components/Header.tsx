@@ -1,9 +1,9 @@
 import Link from "next/link";
-import type { Rol } from "@/lib/sesion";
+import type { Role } from "@/types/role";
 import { Icon } from "./Icon";
 
 interface HeaderProps {
-  rol: Rol | null;
+  rol: Role | null;
   nombre?: string;
   titulo: string;
   subtitulo: string;

@@ -2,28 +2,33 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { apiPost, mensajeDeError } from "@/lib/api";
+import { getDevelopmentResetLink, services } from "@/services";
+import { mensajeDeServicio as getServiceErrorMessage } from "@/utils/mensaje-error";
 import { Alerta, Campo } from "@/components/formulario";
 import { Icon } from "@/components/Icon";
 
-export default function RecuperarContrasenaPage() {
-  const [correo, setCorreo] = useState("");
+export default function RequestPasswordResetPage() {
+  const [mail, setMail] = useState("");
   const [error, setError] = useState("");
-  const [aviso, setAviso] = useState("");
-  const [cargando, setCargando] = useState(false);
+  const [message, setMessage] = useState("");
+  const [resetLink, setResetLink] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isLoading) return;
     setError("");
-    setAviso("");
-    setCargando(true);
+    setMessage("");
+    setResetLink(null);
+    setIsLoading(true);
     try {
-      const respuesta = await apiPost<{ mensaje: string }>("/api/auth/recuperar-contrasena", { correo });
-      setAviso(respuesta.mensaje);
-    } catch (err) {
-      setError(mensajeDeError(err));
+      const response = await services.authentication.requestPasswordReset({ mail });
+      setMessage(response.message);
+      setResetLink(getDevelopmentResetLink(mail));
+    } catch (error) {
+      setError(getServiceErrorMessage(error));
     } finally {
-      setCargando(false);
+      setIsLoading(false);
     }
   }
 
@@ -49,13 +54,23 @@ export default function RecuperarContrasenaPage() {
           autoComplete="email"
           placeholder="tu@correo.cl"
           required
-          value={correo}
-          onChange={(e) => setCorreo(e.target.value)}
+          disabled={isLoading}
+          value={mail}
+          onChange={(event) => {
+            setMail(event.target.value);
+            setMessage("");
+            setResetLink(null);
+          }}
         />
         {error && <Alerta tipo="error">{error}</Alerta>}
-        {aviso && <Alerta tipo="exito">{aviso}</Alerta>}
-        <button className="btn btn-primary btn-wide" type="submit" disabled={cargando}>
-          {cargando ? "Enviando..." : "Enviar"}
+        {message && <Alerta tipo="exito">{message}</Alerta>}
+        {resetLink && (
+          <Link href={resetLink} className="text-link">
+            Abrir enlace de recuperación simulado
+          </Link>
+        )}
+        <button className="btn btn-primary btn-wide" type="submit" disabled={isLoading}>
+          {isLoading ? "Enviando..." : "Enviar"}
         </button>
       </form>
     </>

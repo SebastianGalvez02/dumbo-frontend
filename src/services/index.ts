@@ -1,4 +1,4 @@
-import { mockServices } from "@/mocks/mock-services";
+import { mockControls, mockServices } from "@/mocks/mock-services";
 
 import type { AuthenticationService } from "./contracts/authentication-service";
 import type { CustomerService } from "./contracts/customer-service";
@@ -18,3 +18,8 @@ export interface Services {
 }
 
 export const services: Services = mockServices;
+
+export function getDevelopmentResetLink(mail: string): string | null {
+  if (process.env.NODE_ENV !== "development") return null;
+  return mockControls.getResetLink(mail);
+}

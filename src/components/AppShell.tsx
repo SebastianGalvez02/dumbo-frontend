@@ -1,45 +1,63 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { cerrarSesion, useSesion } from "@/lib/sesion";
+import { clearSession } from "@/context/session-store";
+import { useSession } from "@/hooks/use-session";
 import { buscarSeccion, rutaInicio } from "@/lib/menu";
+import { services } from "@/services";
+import { mensajeDeServicio } from "@/utils/mensaje-error";
+import { Alerta } from "./formulario";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const rutaActual = usePathname();
-  const sesion = useSesion();
-  const rol = sesion?.rol ?? null;
+  const currentPath = usePathname();
+  const session = useSession();
+  const role = session?.role ?? null;
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [error, setError] = useState("");
 
-  // undefined mientras se lee la sesión; luego, la sección si tiene acceso.
-  const seccion = sesion === undefined ? undefined : buscarSeccion(rol, rutaActual);
+  const section = session === undefined ? undefined : buscarSeccion(role, currentPath);
 
   useEffect(() => {
-    if (sesion === undefined || seccion) return;
-    // Sin acceso: con sesión va a su inicio; sin sesión, al login.
-    router.replace(sesion ? rutaInicio(sesion.rol) : "/login");
-  }, [sesion, seccion, router]);
+    if (isSigningOut || session === undefined || section) return;
+    router.replace(session ? rutaInicio(session.role) : "/login");
+  }, [isSigningOut, session, section, router]);
 
-  if (!seccion) return null;
+  if (!section) return null;
 
-  function salir() {
-    cerrarSesion();
-    router.replace("/login");
+  async function handleSignOut() {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    setError("");
+
+    try {
+      await services.authentication.signOut();
+      clearSession();
+      router.replace("/login");
+    } catch (error) {
+      setError(mensajeDeServicio(error));
+    } finally {
+      setIsSigningOut(false);
+    }
   }
 
   return (
     <div className="app-shell">
-      <Sidebar rol={rol} onSalir={salir} />
+      <Sidebar rol={role} onSignOut={handleSignOut} isSigningOut={isSigningOut} />
       <div className="main-content">
         <Header
-          rol={rol}
-          nombre={sesion?.nombres}
-          titulo={seccion.titulo}
-          subtitulo={seccion.subtitulo}
+          rol={role}
+          nombre={session?.name}
+          titulo={section.titulo}
+          subtitulo={section.subtitulo}
         />
-        <div className="content-area">{children}</div>
+        <div className="content-area">
+          {error && <Alerta tipo="error">{error}</Alerta>}
+          {children}
+        </div>
       </div>
     </div>
   );

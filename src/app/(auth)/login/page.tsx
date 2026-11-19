@@ -3,87 +3,109 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { apiPost, mensajeDeError } from "@/lib/api";
-import { guardarSesion, type Sesion } from "@/lib/sesion";
-import { esContrasenaSegura, MENSAJE_CONTRASENA, REQUISITOS_CONTRASENA } from "@/lib/validaciones";
+import { clearSession, saveSession } from "@/context/session-store";
+import {
+  esContrasenaSegura as isStrongPassword,
+  MENSAJE_CONTRASENA as PASSWORD_ERROR_MESSAGE,
+  REQUISITOS_CONTRASENA as PASSWORD_REQUIREMENTS,
+} from "@/lib/validaciones";
+import { services } from "@/services";
+import type { Session } from "@/types/session";
+import { mensajeDeServicio as getServiceErrorMessage } from "@/utils/mensaje-error";
 import { Alerta, Campo } from "@/components/formulario";
 import { Icon } from "@/components/Icon";
 
-type Vista = "login" | "primer-acceso";
-
 export default function LoginPage() {
   const router = useRouter();
-  const [vista, setVista] = useState<Vista>("login");
-  const [correo, setCorreo] = useState("");
-  const [contrasena, setContrasena] = useState("");
-  const [nueva, setNueva] = useState("");
-  const [tokenTemporal, setTokenTemporal] = useState("");
+  const [mail, setMail] = useState("");
+  const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [temporaryToken, setTemporaryToken] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [cargando, setCargando] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  function entrar(sesion: Sesion) {
-    guardarSesion(sesion);
+  function resetPasswordFields() {
+    setPassword("");
+    setNewPassword("");
+    setTemporaryToken(null);
+  }
 
-    setContrasena("");
-    setNueva("");
-    setTokenTemporal("");
-    setError("");
-    setVista("login");
-    setCargando(false);
-
+  function completeSignIn(session: Session) {
+    saveSession(session);
+    resetPasswordFields();
     router.replace("/");
   }
 
-
-  async function iniciarSesion(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function handleSignIn(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isLoading) return;
     setError("");
-    setCargando(true);
+    setIsLoading(true);
 
     try {
-      const sesion = await apiPost<Sesion>("/api/auth/login", { correo, contrasena });
-
-      if (sesion.debeCambiarContrasena) {
-        // El token viene limitado: se guarda solo en memoria, no en localStorage.
-        setTokenTemporal(sesion.token);
-        setVista("primer-acceso");
-        setCargando(false);
+      const session = await services.authentication.signIn({ mail, password });
+      if (session.hasToChangePassword) {
+        // El token del primer acceso queda en el formulario hasta cambiar la clave.
+        clearSession();
+        setTemporaryToken(session.token);
         return;
       }
-
-      entrar(sesion);
-    } catch (err) {
-      setError(mensajeDeError(err));
-      setCargando(false);
+      completeSignIn(session);
+    } catch (error) {
+      setError(getServiceErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
   }
 
-  async function cambiarContrasenaInicial(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function handleInitialPasswordChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isLoading || !temporaryToken) return;
     setError("");
 
-    if (!esContrasenaSegura(nueva)) {
-      setError(MENSAJE_CONTRASENA);
+    if (!isStrongPassword(newPassword)) {
+      setError(PASSWORD_ERROR_MESSAGE);
       return;
     }
+    if (!window.confirm("¿Está seguro de cambiar su contraseña?")) return;
 
-    setCargando(true);
+    setIsLoading(true);
+    let passwordChanged = false;
     try {
-      await apiPost(
-        "/api/auth/cambiar-contrasena",
-        { contrasenaActual: contrasena, contrasenaNueva: nueva },
-        tokenTemporal,
+      await services.authentication.changePassword(
+        { oldPassword: password, newPassword },
+        temporaryToken,
       );
-      // El token anterior sigue limitado, así que se inicia sesión de nuevo.
-      const sesion = await apiPost<Sesion>("/api/auth/login", { correo, contrasena: nueva });
-      entrar(sesion);
-    } catch (err) {
-      setError(mensajeDeError(err));
-      setCargando(false);
+      passwordChanged = true;
+      const session = await services.authentication.signIn({ mail, password: newPassword });
+      completeSignIn(session);
+    } catch (error) {
+      if (passwordChanged) {
+        resetPasswordFields();
+        setError("La contraseña se cambió. Inicia sesión con tu nueva contraseña.");
+      } else {
+        setError(getServiceErrorMessage(error));
+      }
+    } finally {
+      setIsLoading(false);
     }
   }
 
-  if (vista === "primer-acceso") {
+  async function handleCancelFirstAccess() {
+    if (isLoading) return;
+    setIsLoading(true);
+    setError("");
+    try {
+      await services.authentication.signOut();
+      resetPasswordFields();
+    } catch (error) {
+      setError(getServiceErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  if (temporaryToken) {
     return (
       <>
         <div className="auth-symbol">
@@ -92,9 +114,9 @@ export default function LoginPage() {
         <div className="auth-heading">
           <p className="eyebrow">Primer acceso</p>
           <h2>Cambia tu contraseña inicial</h2>
-          <p>Por seguridad, debes crear una nueva contraseña antes de continuar. {REQUISITOS_CONTRASENA}</p>
+          <p>Por seguridad, debes crear una nueva contraseña antes de continuar. {PASSWORD_REQUIREMENTS}</p>
         </div>
-        <form onSubmit={cambiarContrasenaInicial}>
+        <form onSubmit={handleInitialPasswordChange}>
           <Campo
             etiqueta="Nueva contraseña"
             icono="lock"
@@ -102,12 +124,16 @@ export default function LoginPage() {
             autoComplete="new-password"
             placeholder="Más de 8 caracteres"
             required
-            value={nueva}
-            onChange={(e) => setNueva(e.target.value)}
+            disabled={isLoading}
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
           />
           {error && <Alerta tipo="error">{error}</Alerta>}
-          <button className="btn btn-primary btn-wide" type="submit" disabled={cargando}>
-            {cargando ? "Guardando..." : "Cambiar contraseña y continuar"}
+          <button className="btn btn-primary btn-wide" type="submit" disabled={isLoading}>
+            {isLoading ? "Guardando..." : "Cambiar contraseña y continuar"}
+          </button>
+          <button className="btn btn-secondary btn-wide" type="button" onClick={handleCancelFirstAccess} disabled={isLoading}>
+            Volver al inicio de sesión
           </button>
         </form>
       </>
@@ -122,7 +148,7 @@ export default function LoginPage() {
         <p>Ingresa tus datos para acceder a tu cuenta.</p>
       </div>
 
-      <form onSubmit={iniciarSesion}>
+      <form onSubmit={handleSignIn}>
         <Campo
           etiqueta="Correo electrónico"
           icono="mail"
@@ -130,8 +156,9 @@ export default function LoginPage() {
           autoComplete="email"
           placeholder="tu@correo.cl"
           required
-          value={correo}
-          onChange={(e) => setCorreo(e.target.value)}
+          disabled={isLoading}
+          value={mail}
+          onChange={(event) => setMail(event.target.value)}
         />
         <Campo
           etiqueta="Contraseña"
@@ -140,8 +167,9 @@ export default function LoginPage() {
           autoComplete="current-password"
           placeholder="Ingresa tu contraseña"
           required
-          value={contrasena}
-          onChange={(e) => setContrasena(e.target.value)}
+          disabled={isLoading}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
         />
 
         <Link href="/recuperar-contrasena" className="text-link forgot-link">
@@ -150,8 +178,8 @@ export default function LoginPage() {
 
         {error && <Alerta tipo="error">{error}</Alerta>}
 
-        <button className="btn btn-primary btn-wide" type="submit" disabled={cargando}>
-          {cargando ? "Ingresando..." : "Iniciar sesión"} <Icon name="arrow" />
+        <button className="btn btn-primary btn-wide" type="submit" disabled={isLoading}>
+          {isLoading ? "Ingresando..." : "Iniciar sesión"} <Icon name="arrow" />
         </button>
       </form>
 

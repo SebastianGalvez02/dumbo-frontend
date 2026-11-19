@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import FormularioRestablecer from "./FormularioRestablecer";
+import ResetPasswordForm from "./FormularioRestablecer";
 
-export default function RestablecerContrasenaPage() {
+export default function ResetPasswordPage() {
   return (
     <Suspense fallback={<p className="text-center text-sm text-(--muted)">Cargando...</p>}>
-      <FormularioRestablecer />
+      <ResetPasswordForm />
     </Suspense>
   );
 }
