@@ -541,6 +541,15 @@ export function createMockServices(
     },
 
     customers: {
+      async list() {
+        beforeOperation();
+        requireRole("Trabajador");
+
+        return accounts
+          .filter((account) => account.role === "Cliente")
+          .map(toCustomer);
+      },
+      
       async register(input) {
         beforeOperation();
 
