@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 export type IconName =
-  | "arrow" | "box" | "cart" | "chart" | "chevron" | "close" | "edit" | "grid"
+  | "arrow" | "box" | "cart" | "chart" | "chevron" | "close" | "edit" | "file" | "grid"
   | "lock" | "logout" | "mail" | "plus" | "search" | "shield" | "users";
 
 const paths: Record<IconName, ReactNode> = {
@@ -71,6 +71,12 @@ const paths: Record<IconName, ReactNode> = {
     <>
       <circle cx="11" cy="11" r="7" />
       <path d="m16 16 5 5" />
+    </>
+  ),
+  file: (
+    <>
+      <path d="M6 2h8l4 4v16H6V2Z" />
+      <path d="M14 2v5h5M9 13h6M9 17h6" />
     </>
   )
 };

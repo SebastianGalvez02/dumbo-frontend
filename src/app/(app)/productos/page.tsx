@@ -1,13 +1,14 @@
-import { EstadoVacio } from "@/components/EstadoVacio";
+import { FormularioProducto } from "./FormularioProducto";
+import { ImportarProductos } from "./ImportarProductos";
 
+// Depende de la sesión del navegador: no se valida como navegación instantánea.
 export const instant = false;
 
 export default function ProductosPage() {
   return (
-    <EstadoVacio
-      icono="box"
-      titulo="Gestión de productos en construcción"
-      descripcion="Aquí podrás agregar productos de forma individual o por carga masiva."
-    />
+    <div className="management-grid">
+      <FormularioProducto />
+      <ImportarProductos />
+    </div>
   );
 }
