@@ -1,5 +1,3 @@
-import { leerSesion } from "./sesion";
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export class ApiError extends Error {
@@ -28,13 +26,11 @@ async function solicitar<T>(
   body?: unknown,
   token?: string,
 ): Promise<T> {
-  const tokenFinal = token ?? leerSesion()?.token;
-
   const respuesta = await fetch(`${API_URL}${ruta}`, {
     method: metodo,
     headers: {
       "Content-Type": "application/json",
-      ...(tokenFinal ? { Authorization: `Bearer ${tokenFinal}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });

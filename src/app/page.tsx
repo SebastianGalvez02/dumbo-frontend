@@ -2,17 +2,17 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSesion } from "@/lib/sesion";
+import { useSession } from "@/hooks/use-session";
 import { rutaInicio } from "@/lib/menu";
 
 export default function Home() {
   const router = useRouter();
-  const sesion = useSesion();
+  const session = useSession();
 
   useEffect(() => {
-    if (sesion === null) router.replace("/catalogo");
-    else if (sesion) router.replace(rutaInicio(sesion.rol));
-  }, [sesion, router]);
+    if (session === null) router.replace("/catalogo");
+    else if (session) router.replace(rutaInicio(session.role));
+  }, [session, router]);
 
   return null;
 }

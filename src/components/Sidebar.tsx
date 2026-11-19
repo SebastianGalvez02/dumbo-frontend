@@ -3,11 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { seccionesDe } from "@/lib/menu";
-import type { Rol } from "@/lib/sesion";
+import type { Role } from "@/types/role";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
 
-export function Sidebar({ rol, onSalir }: { rol: Rol | null; onSalir: () => void }) {
+interface SidebarProps {
+  rol: Role | null;
+  onSignOut: () => void;
+  isSigningOut: boolean;
+}
+
+export function Sidebar({ rol, onSignOut, isSigningOut }: SidebarProps) {
   const rutaActual = usePathname();
 
   return (
@@ -38,8 +44,8 @@ export function Sidebar({ rol, onSalir }: { rol: Rol | null; onSalir: () => void
               <span>Vista limitada por rol</span>
             </div>
           </div>
-          <button className="logout-button" onClick={onSalir}>
-            <Icon name="logout" /> Cerrar sesión
+          <button className="logout-button" onClick={onSignOut} disabled={isSigningOut}>
+            <Icon name="logout" /> {isSigningOut ? "Saliendo..." : "Cerrar sesión"}
           </button>
         </>
       ) : (

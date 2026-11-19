@@ -3,51 +3,63 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { apiPost, mensajeDeError } from "@/lib/api";
-import { esContrasenaSegura, MENSAJE_CONTRASENA, REQUISITOS_CONTRASENA } from "@/lib/validaciones";
+import { clearSession, getSession } from "@/context/session-store";
+import {
+  esContrasenaSegura as isStrongPassword,
+  MENSAJE_CONTRASENA as PASSWORD_ERROR_MESSAGE,
+  REQUISITOS_CONTRASENA as PASSWORD_REQUIREMENTS,
+} from "@/lib/validaciones";
+import { services } from "@/services";
+import { mensajeDeServicio as getServiceErrorMessage } from "@/utils/mensaje-error";
 import { Alerta, Campo } from "@/components/formulario";
 import { Icon } from "@/components/Icon";
 
-export default function FormularioRestablecer() {
-  const parametros = useSearchParams();
-  const correo = parametros.get("correo");
-  const token = parametros.get("token");
+export default function ResetPasswordForm() {
+  const searchParams = useSearchParams();
+  const mail = searchParams.get("correo");
+  const token = searchParams.get("token");
 
-  const [nueva, setNueva] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState("");
-  const [exito, setExito] = useState(false);
-  const [cargando, setCargando] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!mail || !token || isLoading) return;
     setError("");
 
-    if (!esContrasenaSegura(nueva)) {
-      setError(MENSAJE_CONTRASENA);
+    if (!isStrongPassword(newPassword)) {
+      setError(PASSWORD_ERROR_MESSAGE);
       return;
     }
+    if (!window.confirm("¿Está seguro de restablecer su contraseña?")) return;
 
-    setCargando(true);
+    setIsLoading(true);
     try {
-      await apiPost("/api/auth/restablecer-contrasena", { correo, token, contrasenaNueva: nueva });
-      setExito(true);
-    } catch (err) {
-      setError(mensajeDeError(err));
+      await services.authentication.resetPassword({ mail, token, newPassword });
+      if (getSession()?.mail === mail.trim().toLowerCase()) {
+        clearSession();
+      }
+      setNewPassword("");
+      setIsSuccess(true);
+    } catch (error) {
+      setError(getServiceErrorMessage(error));
     } finally {
-      setCargando(false);
+      setIsLoading(false);
     }
   }
 
-  const volver = (
+  const backLink = (
     <Link href="/login" className="back-link">
       <Icon name="chevron" /> Volver al inicio
     </Link>
   );
 
-  if (!correo || !token) {
+  if (!mail || !token) {
     return (
       <>
-        {volver}
+        {backLink}
         <Alerta tipo="error">El enlace de recuperación no es válido o ha expirado.</Alerta>
       </>
     );
@@ -55,17 +67,17 @@ export default function FormularioRestablecer() {
 
   return (
     <>
-      {volver}
+      {backLink}
       <div className="auth-symbol">
         <Icon name="lock" size={28} />
       </div>
       <div className="auth-heading">
         <p className="eyebrow">Nueva clave</p>
         <h2>Crea una contraseña segura</h2>
-        <p>{REQUISITOS_CONTRASENA}</p>
+        <p>{PASSWORD_REQUIREMENTS}</p>
       </div>
 
-      {exito ? (
+      {isSuccess ? (
         <div className="flex flex-col gap-4">
           <Alerta tipo="exito">Contraseña actualizada correctamente.</Alerta>
           <Link href="/login" className="btn btn-secondary btn-wide">
@@ -81,12 +93,13 @@ export default function FormularioRestablecer() {
             autoComplete="new-password"
             placeholder="Más de 8 caracteres"
             required
-            value={nueva}
-            onChange={(e) => setNueva(e.target.value)}
+            disabled={isLoading}
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
           />
           {error && <Alerta tipo="error">{error}</Alerta>}
-          <button className="btn btn-primary btn-wide" type="submit" disabled={cargando}>
-            {cargando ? "Guardando..." : "Actualizar contraseña"}
+          <button className="btn btn-primary btn-wide" type="submit" disabled={isLoading}>
+            {isLoading ? "Guardando..." : "Actualizar contraseña"}
           </button>
         </form>
       )}

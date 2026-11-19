@@ -1,5 +1,5 @@
 import type { IconName } from "@/components/Icon";
-import type { Rol } from "./sesion";
+import type { Role } from "@/types/role";
 
 export interface Seccion {
   ruta: string;
@@ -17,7 +17,7 @@ const CATALOGO: Seccion = {
   subtitulo: "Descubre productos frescos para tu día a día.",
 };
 
-export const MENU: Record<Rol, Seccion[]> = {
+export const MENU: Record<Role, Seccion[]> = {
   Cliente: [
     CATALOGO,
     {
@@ -66,16 +66,16 @@ export const MENU: Record<Rol, Seccion[]> = {
 export const MENU_INVITADO: Seccion[] = [CATALOGO];
 
 /** Secciones del menú según el rol. */
-export function seccionesDe(rol: Rol | null): Seccion[] {
+export function seccionesDe(rol: Role | null): Seccion[] {
   return rol ? MENU[rol] : MENU_INVITADO;
 }
 
 /** Primera sección del rol: es donde llega al iniciar sesión. */
-export function rutaInicio(rol: Rol): string {
+export function rutaInicio(rol: Role): string {
   return MENU[rol][0].ruta;
 }
 
 /** Devuelve la sección si el rol tiene acceso a esa ruta. */
-export function buscarSeccion(rol: Rol | null, ruta: string): Seccion | undefined {
+export function buscarSeccion(rol: Role | null, ruta: string): Seccion | undefined {
   return seccionesDe(rol).find((seccion) => seccion.ruta === ruta);
 }
