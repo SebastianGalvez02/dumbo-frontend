@@ -369,118 +369,6 @@ td {
   min-height: 320px;
 }
 
-/* ---------- Ventanas (modales) ---------- */
-.modal-backdrop {
-  position: fixed;
-  z-index: 100;
-  inset: 0;
-  display: grid;
-  overflow-y: auto;
-  place-items: center;
-  padding: 24px;
-  background: rgba(5, 30, 24, 0.62);
-  backdrop-filter: blur(5px);
-}
-
-.confirm-modal,
-.person-modal {
-  position: relative;
-  width: min(430px, 100%);
-  border-radius: 17px;
-  padding: 34px;
-  background: white;
-  box-shadow: 0 24px 80px rgba(3, 24, 18, 0.3);
-}
-
-.person-modal {
-  width: min(590px, 100%);
-}
-
-.icon-btn {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: white;
-  color: var(--muted);
-}
-
-.modal-close {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-}
-
-.confirm-icon {
-  display: grid;
-  width: 58px;
-  height: 58px;
-  place-items: center;
-  margin-bottom: 24px;
-  border-radius: 18px;
-  background: var(--green-100);
-  color: var(--green-800);
-}
-
-.confirm-modal h2,
-.person-modal h2 {
-  margin: 0;
-  color: var(--green-950);
-  font-size: 25px;
-  font-weight: 700;
-  letter-spacing: -1px;
-}
-
-.confirm-modal > p:not(.eyebrow) {
-  margin: 12px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 28px;
-}
-
-.modal-title {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 25px;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 17px;
-  margin-bottom: 20px;
-}
-
-.protected-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 8px;
-  padding: 10px 12px;
-  background: #f3f6f2;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.5;
-}
-
-.protected-field svg {
-  flex-shrink: 0;
-}
-
-.person-modal > .alert {
-  margin-top: 12px;
-}
-
 /* ---------- Avisos flotantes ---------- */
 .toast {
   position: fixed;
@@ -882,14 +770,6 @@ input[type="file"] {
   .table-toolbar {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .modal-actions {
-    flex-direction: column-reverse;
   }
 
   .span-2 {

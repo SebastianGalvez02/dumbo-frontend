@@ -40,8 +40,8 @@ export const MENU: Record<Role, Seccion[]> = {
       ruta: "/clientes",
       etiqueta: "Clientes",
       icono: "users",
-      titulo: "Registro de clientes",
-      subtitulo: "Crea una cuenta para un cliente.",
+      titulo: "Gestión de clientes",
+      subtitulo: "Registra y consulta las cuentas de los clientes.",
     },
   ],
   Administrador: [
