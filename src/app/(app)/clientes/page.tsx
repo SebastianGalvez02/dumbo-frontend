@@ -1,13 +1,18 @@
-import { EstadoVacio } from "@/components/EstadoVacio";
+import { CustomerRegistrationForm } from "@/components/CustomerRegistrationForm";
+import { Icon } from "@/components/Icon";
 
 export const instant = false;
 
-export default function ClientesPage() {
+export default function CustomersPage() {
   return (
-    <EstadoVacio
-      icono="users"
-      titulo="Gestión de clientes en construcción"
-      descripcion="Aquí podrás administrar las cuentas de los clientes."
-    />
+    <section className="panel form-panel max-w-2xl" aria-labelledby="customer-registration-heading">
+      <div className="panel-heading">
+        <h2 id="customer-registration-heading">Nuevo cliente</h2>
+        <span className="panel-icon">
+          <Icon name="users" />
+        </span>
+      </div>
+      <CustomerRegistrationForm mode="employee" />
+    </section>
   );
 }
