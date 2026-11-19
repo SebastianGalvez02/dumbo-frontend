@@ -71,9 +71,48 @@ export const initialProducts: Product[] = [
     category: "Abarrotes",
     price: 1500,
     stock: 20,
-    imageUrl: null,
+    imageUrl:
+      "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=900&q=85",
     brand: "Demo",
   },
+
+  {
+    id: 2,
+    code: "FRU-001",
+    name: "Manzana Fuji",
+    description: "Manzanas frescas, crujientes y naturalmente dulces.",
+    category: "Frutas",
+    price: 2490,
+    stock: 18,
+    imageUrl:
+      "https://images.unsplash.com/photo-1586090643003-b2bfb4fbd833?auto=format&fit=crop&w=900&q=85",
+    brand: "Dumbo Selección",
+  },
+  {
+    id: 3,
+    code: "VER-001",
+    name: "Mix de verduras",
+    description: "Verduras frescas listas para tu semana.",
+    category: "Verduras",
+    price: 5990,
+    stock: 12,
+    imageUrl:
+      "https://images.unsplash.com/photo-1528733918455-5a59687cedf0?auto=format&fit=crop&w=900&q=85",
+    brand: "Dumbo Selección",
+  },
+  {
+    id: 4,
+    code: "DES-001",
+    name: "Selección de especias",
+    description: "Especias variadas para dar sabor a tus preparaciones.",
+    category: "Despensa",
+    price: 4990,
+    stock: 0,
+    imageUrl:
+      "https://images.unsplash.com/photo-1757801752791-8bcd63cec878?auto=format&fit=crop&w=900&q=85",
+    brand: "Dumbo Selección",
+  },
+
 ];
 
 const sampleProduct: CreateProductInput = {

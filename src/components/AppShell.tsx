@@ -11,14 +11,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const rutaActual = usePathname();
   const sesion = useSesion();
-  const seccion = sesion ? buscarSeccion(sesion.rol, rutaActual) : undefined;
+  const rol = sesion?.rol ?? null;
+
+  // undefined mientras se lee la sesión; luego, la sección si tiene acceso.
+  const seccion = sesion === undefined ? undefined : buscarSeccion(rol, rutaActual);
 
   useEffect(() => {
-    if (sesion === null) router.replace("/login");
-    else if (sesion && !seccion) router.replace(rutaInicio(sesion.rol));
+    if (sesion === undefined || seccion) return;
+    // Sin acceso: con sesión va a su inicio; sin sesión, al login.
+    router.replace(sesion ? rutaInicio(sesion.rol) : "/login");
   }, [sesion, seccion, router]);
 
-  if (!sesion || !seccion) return null;
+  if (!seccion) return null;
 
   function salir() {
     cerrarSesion();
@@ -27,11 +31,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-shell">
-      <Sidebar rol={sesion.rol} onSalir={salir} />
+      <Sidebar rol={rol} onSalir={salir} />
       <div className="main-content">
         <Header
-          rol={sesion.rol}
-          nombre={sesion.nombres}
+          rol={rol}
+          nombre={sesion?.nombres}
           titulo={seccion.titulo}
           subtitulo={seccion.subtitulo}
         />
