@@ -31,7 +31,7 @@ export const initialAccounts: MockAccount[] = [
     id: 2,
     name: "Pedro",
     lastName: "Soto",
-    phone: "900000002",
+    phone: "+56 9 0000 0002",
     mail: "employee@dumbo.test",
     role: "Trabajador",
     isEnabled: true,

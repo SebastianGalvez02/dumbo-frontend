@@ -17,7 +17,20 @@ export interface Services {
   products: ProductService;
 }
 
-export const services: Services = mockServices;
+const dataSource = process.env.NEXT_PUBLIC_DATA_SOURCE ?? "mock";
+
+function getServices(): Services {
+  switch (dataSource) {
+    case "mock":
+      return mockServices;
+    case "api":
+      throw new Error("El adaptador API de Dumbo aún no está disponible. Usa NEXT_PUBLIC_DATA_SOURCE=mock.");
+    default:
+      throw new Error("NEXT_PUBLIC_DATA_SOURCE debe ser mock o api.");
+  }
+}
+
+export const services = getServices();
 
 export function getDevelopmentResetLink(mail: string): string | null {
   if (process.env.NODE_ENV !== "development") return null;

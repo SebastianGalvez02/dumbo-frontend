@@ -1,140 +1,153 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { mensajeDeError } from "@/lib/api";
-import {
-  cambiarEstadoTrabajador,
-  crearTrabajador,
-  editarTrabajador,
-  listarTrabajadores,
-  type DatosTrabajador,
-  type Trabajador,
-} from "@/lib/trabajadores";
+import { services } from "@/services";
+import type { Employee, UserContact } from "@/types/users";
+import { mensajeDeServicio as getServiceErrorMessage } from "@/utils/mensaje-error";
 import { Icon } from "@/components/Icon";
 import { Alerta } from "@/components/formulario";
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { FormularioTrabajador } from "./FormularioTrabajador";
+import { EmployeeForm } from "./FormularioTrabajador";
 
-/** Formulario abierto: sin `trabajador` es registro; con `trabajador` es edición. */
-interface Formulario {
-  trabajador?: Trabajador;
-  datos?: DatosTrabajador;
+interface FormState {
+  employee?: Employee;
+  values?: UserContact;
   error?: string;
 }
 
 /** Acción que espera confirmación ("¿Está seguro?"). */
-type Accion =
-  | { tipo: "registrar"; datos: DatosTrabajador }
-  | { tipo: "editar"; trabajador: Trabajador; datos: DatosTrabajador }
-  | { tipo: "estado"; trabajador: Trabajador };
+type EmployeeAction =
+  | { kind: "create"; values: UserContact }
+  | { kind: "edit"; employee: Employee; values: UserContact }
+  | { kind: "status"; employee: Employee };
 
-interface Aviso {
-  mensaje: string;
+interface Notice {
+  message: string;
   error?: boolean;
 }
 
-function detalleDe(accion: Accion): string {
-  if (accion.tipo === "registrar") return "Se creará una nueva cuenta de trabajador.";
-  if (accion.tipo === "editar") return "Se guardarán los cambios realizados al trabajador.";
-  const estado = accion.trabajador.habilitado ? "deshabilitada" : "habilitada";
-  return `La cuenta de ${accion.trabajador.nombres} ${accion.trabajador.apellidos} será ${estado}.`;
+function getConfirmationDetails(action: EmployeeAction): string {
+  if (action.kind === "create") return "Se creará una nueva cuenta de trabajador.";
+  if (action.kind === "edit") return "Se guardarán los cambios realizados al trabajador.";
+  const statusLabel = action.employee.isEnabled ? "deshabilitada" : "habilitada";
+  return `La cuenta de ${action.employee.name} ${action.employee.lastName} será ${statusLabel}.`;
 }
 
-export function GestionTrabajadores() {
-  const [trabajadores, setTrabajadores] = useState<Trabajador[] | null>(null);
-  const [errorCarga, setErrorCarga] = useState("");
-  const [busqueda, setBusqueda] = useState("");
-  const [formulario, setFormulario] = useState<Formulario | null>(null);
-  const [accion, setAccion] = useState<Accion | null>(null);
-  const [procesando, setProcesando] = useState(false);
-  const [aviso, setAviso] = useState<Aviso | null>(null);
+export function EmployeeManagement() {
+  const [employees, setEmployees] = useState<Employee[] | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [query, setQuery] = useState("");
+  const [form, setForm] = useState<FormState | null>(null);
+  const [action, setAction] = useState<EmployeeAction | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notice, setNotice] = useState<Notice | null>(null);
 
-  // Carga inicial de la lista.
   useEffect(() => {
-    let activo = true;
-    listarTrabajadores()
-      .then((lista) => {
-        if (activo) setTrabajadores(lista);
+    let isMounted = true;
+    services.employees.list()
+      .then((list) => {
+        if (isMounted) setEmployees(list);
       })
-      .catch((err: unknown) => {
-        if (activo) setErrorCarga(mensajeDeError(err));
+      .catch((error: unknown) => {
+        if (isMounted) setLoadError(getServiceErrorMessage(error));
       });
     return () => {
-      activo = false;
+      isMounted = false;
     };
-  }, []);
+  }, [loadAttempt]);
 
-  const texto = busqueda.trim().toLowerCase();
-  const filtrados = (trabajadores ?? []).filter((t) =>
-    `${t.nombres} ${t.apellidos} ${t.correo} ${t.telefono}`.toLowerCase().includes(texto),
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 3500);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
+  const search = query.trim().toLowerCase();
+  const filteredEmployees = (employees ?? []).filter((employee) =>
+    `${employee.name} ${employee.lastName} ${employee.mail} ${employee.phone}`.toLowerCase().includes(search),
   );
 
-  function mostrarAviso(nuevo: Aviso) {
-    setAviso(nuevo);
-    setTimeout(() => setAviso(null), 3500);
+  function replaceEmployee(updatedEmployee: Employee) {
+    setEmployees((list) => (list ?? []).map((employee) =>
+      employee.id === updatedEmployee.id ? updatedEmployee : employee,
+    ));
   }
 
-  function actualizarEnLista(id: number, cambios: Partial<Trabajador>) {
-    setTrabajadores((lista) => (lista ?? []).map((t) => (t.id === id ? { ...t, ...cambios } : t)));
+  function handleFormSubmit(values: UserContact) {
+    const employee = form?.employee;
+    setForm(null);
+    setAction(employee ? { kind: "edit", employee, values } : { kind: "create", values });
   }
 
-  function enviarFormulario(datos: DatosTrabajador) {
-    const trabajador = formulario?.trabajador;
-    setFormulario(null);
-    setAccion(trabajador ? { tipo: "editar", trabajador, datos } : { tipo: "registrar", datos });
-  }
-
-  async function confirmar() {
-    if (!accion) return;
-    setProcesando(true);
+  async function handleConfirm() {
+    if (!action || isSubmitting) return;
+    setIsSubmitting(true);
 
     try {
-      if (accion.tipo === "registrar") {
-        const nuevo = await crearTrabajador(accion.datos);
-        setTrabajadores((lista) => [...(lista ?? []), nuevo]);
-        mostrarAviso({ mensaje: "Trabajador registrado correctamente" });
-      } else if (accion.tipo === "editar") {
-        await editarTrabajador(accion.trabajador.id, accion.datos);
-        actualizarEnLista(accion.trabajador.id, accion.datos);
-        mostrarAviso({ mensaje: "Cambios guardados correctamente" });
+      if (action.kind === "create") {
+        const newEmployee = await services.employees.create(action.values);
+        setEmployees((list) => [...(list ?? []), newEmployee]);
+        setNotice({ message: "Trabajador registrado correctamente" });
+      } else if (action.kind === "edit") {
+        const updatedEmployee = await services.employees.update(action.employee.id, action.values);
+        replaceEmployee(updatedEmployee);
+        setNotice({ message: "Cambios guardados correctamente" });
       } else {
-        const habilitado = !accion.trabajador.habilitado;
-        await cambiarEstadoTrabajador(accion.trabajador.id, habilitado);
-        actualizarEnLista(accion.trabajador.id, { habilitado });
-        mostrarAviso({ mensaje: habilitado ? "Trabajador habilitado" : "Trabajador deshabilitado" });
+        const isEnabled = !action.employee.isEnabled;
+        const updatedEmployee = await services.employees.changeStatus(action.employee.id, { isEnabled });
+        replaceEmployee(updatedEmployee);
+        setNotice({ message: isEnabled ? "Trabajador habilitado" : "Trabajador deshabilitado" });
       }
-    } catch (err) {
-      const error = mensajeDeError(err);
-      if (accion.tipo === "estado") {
-        mostrarAviso({ mensaje: error, error: true });
+    } catch (cause) {
+      const error = getServiceErrorMessage(cause);
+      if (action.kind === "status") {
+        setNotice({ message: error, error: true });
       } else {
-        // Se reabre el formulario con lo que el usuario había escrito y el error del backend.
-        setFormulario({
-          trabajador: accion.tipo === "editar" ? accion.trabajador : undefined,
-          datos: accion.datos,
+        setForm({
+          employee: action.kind === "edit" ? action.employee : undefined,
+          values: action.values,
           error,
         });
       }
     } finally {
-      setAccion(null);
-      setProcesando(false);
+      setAction(null);
+      setIsSubmitting(false);
     }
   }
 
-  function contenido() {
-    if (errorCarga) {
+  function handleCancelConfirmation() {
+    if (action && action.kind !== "status") {
+      setForm({
+        employee: action.kind === "edit" ? action.employee : undefined,
+        values: action.values,
+      });
+    }
+    setAction(null);
+  }
+
+  function handleRetry() {
+    setLoadError("");
+    setLoadAttempt((attempt) => attempt + 1);
+  }
+
+  function renderEmployees() {
+    if (loadError) {
       return (
         <div className="p-6">
-          <Alerta tipo="error">{errorCarga}</Alerta>
+          <Alerta tipo="error">{loadError}</Alerta>
+          <button type="button" className="btn btn-secondary" onClick={handleRetry}>
+            Reintentar
+          </button>
         </div>
       );
     }
 
-    if (trabajadores === null) {
+    if (employees === null) {
       return <p className="table-message">Cargando trabajadores...</p>;
     }
 
-    if (filtrados.length === 0) {
+    if (filteredEmployees.length === 0) {
       return (
         <div className="empty-state compact">
           <span>
@@ -159,37 +172,37 @@ export function GestionTrabajadores() {
             </tr>
           </thead>
           <tbody>
-            {filtrados.map((t) => (
-              <tr key={t.id}>
+            {filteredEmployees.map((employee) => (
+              <tr key={employee.id}>
                 <td>
                   <div className="person-cell">
-                    <span>{t.nombres.charAt(0)}</span>
+                    <span>{employee.name.charAt(0)}</span>
                     <div>
                       <strong>
-                        {t.nombres} {t.apellidos}
+                        {employee.name} {employee.lastName}
                       </strong>
-                      <small>ID #{String(t.id).padStart(4, "0")}</small>
+                      <small>ID #{String(employee.id).padStart(4, "0")}</small>
                     </div>
                   </div>
                 </td>
-                <td>{t.telefono}</td>
-                <td>{t.correo}</td>
+                <td>{employee.phone}</td>
+                <td>{employee.mail}</td>
                 <td>
-                  <span className={`status ${t.habilitado ? "" : "disabled"}`}>
-                    {t.habilitado ? "Habilitado" : "Deshabilitado"}
+                  <span className={`status ${employee.isEnabled ? "" : "disabled"}`}>
+                    {employee.isEnabled ? "Habilitado" : "Deshabilitado"}
                   </span>
                 </td>
                 <td>
                   <div className="row-actions">
-                    <button type="button" onClick={() => setFormulario({ trabajador: t, datos: t })}>
+                    <button type="button" onClick={() => setForm({ employee, values: employee })}>
                       <Icon name="edit" size={17} /> Editar
                     </button>
                     <button
                       type="button"
-                      className={t.habilitado ? "danger-text" : ""}
-                      onClick={() => setAccion({ tipo: "estado", trabajador: t })}
+                      className={employee.isEnabled ? "danger-text" : ""}
+                      onClick={() => setAction({ kind: "status", employee })}
                     >
-                      {t.habilitado ? "Deshabilitar" : "Habilitar"}
+                      {employee.isEnabled ? "Deshabilitar" : "Habilitar"}
                     </button>
                   </div>
                 </td>
@@ -210,40 +223,45 @@ export function GestionTrabajadores() {
             <input
               placeholder="Buscar trabajadores..."
               aria-label="Buscar trabajadores"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
             />
           </div>
-          <button type="button" className="btn btn-primary" onClick={() => setFormulario({})}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setForm({})}
+            disabled={employees === null}
+          >
             <Icon name="plus" /> Registrar trabajador
           </button>
         </div>
 
-        {contenido()}
+        {renderEmployees()}
       </div>
 
-      {formulario && (
-        <FormularioTrabajador
-          esEdicion={Boolean(formulario.trabajador)}
-          inicial={formulario.datos}
-          error={formulario.error}
-          onCancelar={() => setFormulario(null)}
-          onEnviar={enviarFormulario}
+      {form && (
+        <EmployeeForm
+          isEditing={Boolean(form.employee)}
+          initialValues={form.values}
+          error={form.error}
+          onCancel={() => setForm(null)}
+          onSubmit={handleFormSubmit}
         />
       )}
 
-      {accion && (
+      {action && (
         <ConfirmModal
-          detalle={detalleDe(accion)}
-          procesando={procesando}
-          onCancelar={() => setAccion(null)}
-          onConfirmar={confirmar}
+          detalle={getConfirmationDetails(action)}
+          procesando={isSubmitting}
+          onCancelar={handleCancelConfirmation}
+          onConfirmar={handleConfirm}
         />
       )}
 
-      {aviso && (
-        <div className={`toast ${aviso.error ? "danger" : ""}`} role="status">
-          {aviso.mensaje}
+      {notice && (
+        <div className={`toast ${notice.error ? "danger" : ""}`} role="status">
+          {notice.message}
         </div>
       )}
     </>
